@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as dpath from './dpath';
 
 export class TreeItem extends vscode.TreeItem {
   constructor(
@@ -13,10 +14,14 @@ export class TreeItem extends vscode.TreeItem {
 export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined | null | void> = new vscode.EventEmitter<TreeItem | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+  private _filename: string | undefined;
 
-  constructor() {}
+  constructor(public readonly filename: string) {
+	this._filename = filename;
+  }
 
-  refresh(): void {
+  refresh(filename: string): void {
+    this._filename = filename;
     this._onDidChangeTreeData.fire();
   }
 
@@ -25,19 +30,14 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
   }
 
   getChildren(element?: TreeItem): Thenable<TreeItem[]> {
+	console.log('getChildren called');
     if (element) {
       return Promise.resolve(element.children || []);
     } else {
       // Root elements
+      const stack = dpath.XmlTag(this._filename || '', 1);
       return Promise.resolve([
-        new TreeItem('Group 1', vscode.TreeItemCollapsibleState.Collapsed, [
-          new TreeItem('Item 1.1', vscode.TreeItemCollapsibleState.None),
-          new TreeItem('Item 1.2', vscode.TreeItemCollapsibleState.None),
-        ]),
-        new TreeItem('Group 2', vscode.TreeItemCollapsibleState.Collapsed, [
-          new TreeItem('Item 2.1', vscode.TreeItemCollapsibleState.None),
-          new TreeItem('Item 2.2', vscode.TreeItemCollapsibleState.None),
-        ]),
+        ...stack.map(([label, line]) => new TreeItem(String(label), vscode.TreeItemCollapsibleState.None)),
       ]);
     }
   }
