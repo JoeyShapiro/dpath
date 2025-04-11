@@ -12,12 +12,34 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "dpath",
+          "name": "dpath",
+          "icon": ""
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "dpath.helloWorld",
-        "title": "Hello World"
+        "command": "dpath.refresh",
+        "title": "Refresh",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "dpath.refresh",
+          "when": "view == dpath",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
