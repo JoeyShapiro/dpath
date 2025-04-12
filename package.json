@@ -25,10 +25,7 @@
       {
         "command": "dpath.refresh",
         "title": "Refresh",
-        "icon": {
-          "light": "$(extensions-refresh)",
-          "dark": "$(extensions-refresh)"
-        }
+        "icon": "$(extensions-refresh)"
       }
     ],
     "menus": {
