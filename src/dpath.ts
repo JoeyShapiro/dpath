@@ -1,5 +1,13 @@
 import { readFileSync } from 'fs';
 
+export function DeepPath(filename: string, filetype: string, line: number): Array<[string, number]> {
+    if (filetype == 'xml') {
+        return XmlTag(filename, line);
+    }
+
+    throw new Error(`Unsupported file type: ${filetype}`);
+}
+
 export function XmlTag(filename: string, line: number): Array<[string, number]> {
     let stack: Array<[string, number]> = [];
     var tag = '';

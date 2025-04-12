@@ -7,7 +7,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const editor = vscode.window.activeTextEditor;
 
 	// Create the tree data provider
-	const treeDataProvider = new TreeDataProvider(editor?.document.fileName, editor?.selection.active.line);
+	const treeDataProvider = new TreeDataProvider(editor?.document.fileName, editor?.document.languageId, editor?.selection.active.line);
 
 	// Register the tree view
 	const treeView = vscode.window.createTreeView('dpath', {
@@ -17,13 +17,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		if (editor) {
-			treeDataProvider.refresh(editor.document.fileName, editor.selection.active.line);
+			treeDataProvider.refresh(editor.document.fileName, editor.document.languageId, editor.selection.active.line);
 		}
 	});
 
 	vscode.window.onDidChangeTextEditorSelection(editor => {
 		if (editor) {
-			treeDataProvider.refresh(editor.textEditor.document.fileName, editor.selections[0].active.line);
+			treeDataProvider.refresh(editor.textEditor.document.fileName, editor.textEditor.document.languageId, editor.selections[0].active.line);
 		}
 	});
 
@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const editor = vscode.window.activeTextEditor;
 			if (editor) {
 				const document = editor.document;
-				treeDataProvider.refresh(document.fileName, editor.selection.active.line);
+				treeDataProvider.refresh(document.fileName, document.languageId, editor.selection.active.line);
 			}
 		})
 	);
