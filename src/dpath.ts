@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 
-export function XmlTag(filename: string, line: number) {
-    let stack = [];
+export function XmlTag(filename: string, line: number): Array<[string, number]> {
+    let stack: Array<[string, number]> = [];
     var tag = '';
     var inStartTag = false;
     var inEndTag = false;

@@ -5,12 +5,9 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "dpath" is now active!');
 
 	const editor = vscode.window.activeTextEditor;
-			if (editor) {
-				const document = editor.document;
-			}
 
 	// Create the tree data provider
-	const treeDataProvider = new TreeDataProvider(editor?.document.fileName || '');
+	const treeDataProvider = new TreeDataProvider(editor?.document.fileName, editor?.selection.active.line);
 
 	// Register the tree view
 	const treeView = vscode.window.createTreeView('dpath', {
@@ -20,7 +17,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		if (editor) {
-			treeDataProvider.refresh(editor.document.fileName);
+			treeDataProvider.refresh(editor.document.fileName, editor.selection.active.line);
+		}
+	});
+
+	vscode.window.onDidChangeTextEditorSelection(editor => {
+		if (editor) {
+			treeDataProvider.refresh(editor.textEditor.document.fileName, editor.selections[0].active.line);
 		}
 	});
 
@@ -30,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const editor = vscode.window.activeTextEditor;
 			if (editor) {
 				const document = editor.document;
-				treeDataProvider.refresh(document.fileName);
+				treeDataProvider.refresh(document.fileName, editor.selection.active.line);
 			}
 		})
 	);
