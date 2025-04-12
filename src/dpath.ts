@@ -32,19 +32,34 @@ export function XmlTag(filename: string, line: number): Array<[string, number]> 
                 }
                 break;
             case '>':
-                if (data[i - 1] != '/') {
-                    if (inStartTag && tag) stack.push([tag, curline]);
-                    else if (inEndTag) stack.pop();
+                if (data[i - 1] == '/' && curline != line) {
+                    stack.pop();
+                } else if (inStartTag && inTagName) {
+                    // TODO store list of whole thing
+                    stack.push([tag, curline]);
+                } else if (inEndTag && curline != line) {
+                    stack.pop();
                 }
+
                 tag = '';
+                inTagName = false;
                 inStartTag = false;
                 inEndTag = false;
                 break;
             case '\n':
+                if (inStartTag && tag) {
+                    stack.push([tag, curline]);
+                    tag = '';
+                    inTagName = false;
+                }
                 curline++;
                 break;
             case ' ':
-                if (inStartTag) inTagName = false;
+                if (inStartTag && tag) {
+                    stack.push([tag, curline]);
+                    tag = '';
+                    inTagName = false;
+                }
                 break;
             default:
                 if (inStartTag && inTagName) tag += c;
