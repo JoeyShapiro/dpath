@@ -13,14 +13,14 @@ export function XmlTag(filename: string, line: number): Array<[string, number]> 
     var tag = '';
     var inStartTag = false;
     var inEndTag = false;
-    var inTag = false;
+    var inTagName = false;
     var curline = 1;
 
     const data = readFileSync(filename, 'utf8');
 
     for (let i = 0; i < data.length; i++) {
         const c = data[i];
-        if (curline == line) break;
+        if (curline == line+1) break;
 
         switch (c) {
             case '<':
@@ -28,12 +28,12 @@ export function XmlTag(filename: string, line: number): Array<[string, number]> 
                 if (data[i + 1] == '/') inEndTag = true;
                 else {
                     inStartTag = true;
-                    inTag = true;
+                    inTagName = true;
                 }
                 break;
             case '>':
                 if (data[i - 1] != '/') {
-                    if (inStartTag) stack.push([tag, curline]);
+                    if (inStartTag && tag) stack.push([tag, curline]);
                     else if (inEndTag) stack.pop();
                 }
                 tag = '';
@@ -43,9 +43,11 @@ export function XmlTag(filename: string, line: number): Array<[string, number]> 
             case '\n':
                 curline++;
                 break;
+            case ' ':
+                if (inStartTag) inTagName = false;
+                break;
             default:
-                if (inStartTag && c == ' ') inTag = false;
-                else if (inStartTag && inTag) tag += c;
+                if (inStartTag && inTagName) tag += c;
         }
     }
 
