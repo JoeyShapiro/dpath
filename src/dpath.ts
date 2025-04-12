@@ -17,11 +17,11 @@ export function XmlTag(filename: string, line: number): Array<[string, number]> 
     var curline = 1;
 
     const data = readFileSync(filename, 'utf8');
-    
+
     for (let i = 0; i < data.length; i++) {
         const c = data[i];
         if (curline == line) break;
-    
+
         switch (c) {
             case '<':
                 if (data[i + 1] == '?') break;
