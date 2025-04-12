@@ -8,6 +8,13 @@ export class TreeItem extends vscode.TreeItem {
     public readonly children?: TreeItem[]
   ) {
     super(label, collapsibleState);
+
+	const line = parseInt(label.split(':')[0].trim());
+	this.command = {
+		command: 'dpath.jump',
+		title: 'Jump to Line',
+		arguments: [line],
+	};
   }
 }
 
@@ -45,7 +52,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
       try {
         const stack = dpath.DeepPath(this._filename || '', this._filetype || '', this._line || 0);
 		return Promise.resolve([
-			...stack.map(([label, line]) => new TreeItem(`${label} (${line})`, vscode.TreeItemCollapsibleState.None)),
+			...stack.map(([label, line]) => new TreeItem(`${line}: ${label}`, vscode.TreeItemCollapsibleState.None)),
 		  ]);
       } catch (error) {
         return Promise.resolve([

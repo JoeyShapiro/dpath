@@ -35,6 +35,14 @@ export function activate(context: vscode.ExtensionContext) {
 				const document = editor.document;
 				treeDataProvider.refresh(document.fileName, document.languageId, editor.selection.active.line);
 			}
+		}),
+		vscode.commands.registerCommand('dpath.jump', (line: number) => {
+			const editor = vscode.window.activeTextEditor;
+			if (editor) {
+				const position = new vscode.Position(line - 1, 0);
+				editor.revealRange(new vscode.Range(position, position));
+				editor.selection = new vscode.Selection(position, position);
+			}
 		})
 	);
 

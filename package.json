@@ -26,6 +26,11 @@
         "command": "dpath.refresh",
         "title": "Refresh",
         "icon": "$(extensions-refresh)"
+      },
+      {
+        "command": "dpath.jump",
+        "title": "Jump to Line",
+        "icon": "$(debug-start)"
       }
     ],
     "menus": {
