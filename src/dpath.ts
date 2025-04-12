@@ -31,20 +31,19 @@ export function XmlTag(filename: string, line: number, size: number = 1_048_576)
 
             switch (c) {
                 case '<':
-                    if (String.fromCharCode(data[i + 1]) == '?') break;
-                    if (String.fromCharCode(data[i + 1]) == '/') inEndTag = true;
+                    const nc = String.fromCharCode(data[i + 1]);
+                    if (nc == '?') break;
+                    if (nc == '/') inEndTag = true;
                     else {
                         inStartTag = true;
                         inTagName = true;
                     }
                     break;
                 case '>':
-                    if (String.fromCharCode(data[i - 1]) == '/' && curline != line) {
+                    if ((inEndTag || String.fromCharCode(data[i - 1]) == '/') && curline != line) {
                         stack.pop();
                     } else if (inStartTag && inTagName) {
                         stack.push([tag, curline]);
-                    } else if (inEndTag && curline != line) {
-                        stack.pop();
                     }
 
                     tag = '';
