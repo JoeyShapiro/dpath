@@ -30,12 +30,12 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
   }
 
   getChildren(element?: TreeItem): Thenable<TreeItem[]> {
-	console.log('getChildren called');
     if (element) {
       return Promise.resolve(element.children || []);
     } else {
       // Root elements
-      const stack = dpath.XmlTag(this._filename || '', 1);
+      const stack = dpath.XmlTag(this._filename || '', 70000);
+	  console.log('stack', stack);
       return Promise.resolve([
         ...stack.map(([label, line]) => new TreeItem(String(label), vscode.TreeItemCollapsibleState.None)),
       ]);
