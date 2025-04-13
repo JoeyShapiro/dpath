@@ -8,11 +8,9 @@ Read deep into highly nested or long xml files.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+* `dpath.bufferSize`: Size of the buffer (KiB) to use when reading files.
+* `dpath.debounce`: Debounce time in milliseconds.
 
 **Enjoy!**
