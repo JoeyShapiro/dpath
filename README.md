@@ -4,7 +4,7 @@
 
 Read deep into highly nested or long xml files.
 
-![Demo](images/demo.gif)
+![Demo](./images/demo.gif)
 
 ## Extension Settings
 
