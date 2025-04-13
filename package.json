@@ -12,6 +12,22 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "dpath",
+      "properties": {
+        "dpath.bufferSize": {
+          "type": "number",
+          "default": 1024,
+          "description": "Size of the buffer (KiB) to use when reading files"
+        },
+        "dpath.debounce": {
+          "type": "number",
+          "default": 500,
+          "description": "Debounce time in milliseconds"
+        }
+      }
+    },
     "views": {
       "explorer": [
         {

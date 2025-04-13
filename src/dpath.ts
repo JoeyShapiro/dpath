@@ -1,8 +1,8 @@
 import { close, openSync, readSync } from 'fs';
 
-export function DeepPath(filename: string, filetype: string, line: number): Array<[string, number]> {
+export function DeepPath(filename: string, filetype: string, line: number, size: number = 1_048_576): Array<[string, number]> {
     if (filetype == 'xml') {
-        return XmlTag(filename, line);
+        return XmlTag(filename, line, size);
     }
 
     throw new Error(`Unsupported file type: ${filetype}`);

@@ -24,6 +24,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 	private _filename: string | undefined;
 	private _filetype: string | undefined;
 	private _line: number | undefined;
+	public bufferSize: number = 1024;
 
 	constructor(public readonly filename: string | undefined, public readonly filetype: string | undefined, public readonly line: number | undefined) {
 		this._filename = filename;
@@ -50,7 +51,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 		} else {
 			// Root elements
 			try {
-				const stack = dpath.DeepPath(this._filename || '', this._filetype || '', this._line || 0);
+				const stack = dpath.DeepPath(this._filename || '', this._filetype || '', this._line || 0, this.bufferSize*1024);
 				return Promise.resolve([
 					...stack.map(([label, line]) => new TreeItem(`${line}: ${label}`, vscode.TreeItemCollapsibleState.None)),
 				]);
