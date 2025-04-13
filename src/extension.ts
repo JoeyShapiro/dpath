@@ -22,10 +22,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	vscode.window.onDidChangeTextEditorSelection(editor => {
+	const debouncedOnCursorStable = debounce((editor: vscode.TextEditorSelectionChangeEvent) => {
 		if (editor) {
 			treeDataProvider.refresh(editor.textEditor.document.fileName, editor.textEditor.document.languageId, editor.selections[0].active.line+1);
 		}
+	}, 1000);
+	vscode.window.onDidChangeTextEditorSelection(editor => {
+		debouncedOnCursorStable(editor);
 	});
 
 	// Register refresh command
@@ -52,3 +55,19 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() { }
+
+function debounce(func: Function, wait: number): (...args: any[]) => void {
+	let timeout: NodeJS.Timeout | null = null;
+	
+	return function(...args: any[]) {
+	  // Clear the previous timeout if there is one
+	  if (timeout) {
+		clearTimeout(timeout);
+	  }
+	  
+	  // Set a new timeout
+	  timeout = setTimeout(() => {
+		func(...args);
+	  }, wait);
+	};
+  }
