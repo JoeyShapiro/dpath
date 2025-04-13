@@ -10,6 +10,7 @@ export function DeepPath(filename: string, filetype: string, line: number): Arra
 
 export function XmlTag(filename: string, line: number, size: number = 1_048_576): Array<[string, number]> {
     // TODO store list of whole thing
+    // TODO could do wasm, but its already so fast, i doubt it would help. might even be slower
     let stack: Array<[string, number]> = [];
     var tag = '';
     var inStartTag = false;
