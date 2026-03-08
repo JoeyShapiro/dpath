@@ -139,7 +139,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 5, 19);
+				const result = XmlTag(filepath, 4, 19);
 				assert.ok(result.length > 0);
 				assert.strictEqual(result[0][0], 'root');
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'parent'));
@@ -246,7 +246,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 5, 28);
+				const result = XmlTag(filepath, 6, 28);
 				assert.strictEqual(result[0][0], 'root');
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'level1'));
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'level2'));
@@ -317,7 +317,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = DeepPath(filepath, 'xml', 2, 16);
+				const result = DeepPath(filepath, 'xml', 3, 16);
 				assert.ok(result.length > 0);
 				assert.strictEqual(result[0][0], 'root');
 			} finally {
@@ -405,11 +405,10 @@ suite('dpath Extension Tests', () => {
 			const filepath = createTempXmlFile(xml);
 			try {
 				const result = XmlTag(filepath, 8, 27);
-				const validTags = result.filter((tag: [string, number]) => tag[0] !== '!--');
-				assert.ok(validTags.some((tag: [string, number]) => tag[0] === 'root'));
-				assert.ok(validTags.some((tag: [string, number]) => tag[0] === 'config'));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'root'));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'config'));
 				// deprecated should NOT be in the valid tags
-				assert.ok(!validTags.some((tag: [string, number]) => tag[0] === 'deprecated'));
+				assert.ok(!result.some((tag: [string, number]) => tag[0] === 'deprecated'));
 			} finally {
 				cleanupTempFile(filepath);
 			}
