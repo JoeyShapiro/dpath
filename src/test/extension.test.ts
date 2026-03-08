@@ -37,7 +37,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 4);
+				const result = XmlTag(filepath, 4, 16);
 				// root should be at line 2, valid should be at line 4
 				assert.strictEqual(result.length, 2, 'Expected only root and valid tags to be parsed');
 				assert.strictEqual(result[0][0], 'root');
@@ -60,7 +60,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 7);
+				const result = XmlTag(filepath, 7, 16);
 				// Only root and valid should be present
 				const validTags = result.filter((tag: [string, number]) => tag[0] !== '!--');
 				assert.strictEqual(validTags.length, 2, 'Expected only root and valid tags to be parsed');
@@ -82,7 +82,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 5);
+				const result = XmlTag(filepath, 5, 14);
 				const validTags = result.filter((tag: [string, number]) => tag[0] !== '!--');
 				assert.strictEqual(validTags.length, 2, 'Expected only root and real tags to be parsed');
 				assert.strictEqual(validTags[0][0], 'root');
@@ -99,12 +99,29 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 3);
+				const result = XmlTag(filepath, 3, 14);
 				// Root and child should both be parsed
+				assert.ok(result.length >= 2, 'Expected at least 2 valid tags to be parsed');
+				assert.strictEqual(result[0][0], 'root');
+				assert.strictEqual(result[1][0], 'child');
+			} finally {
+				cleanupTempFile(filepath);
+			}
+		});
+
+		test('should not end comment on standalone greater-than character', () => {
+			const xml = `<?xml version="1.0"?>
+<root>
+	<!-- comment with random > symbol and <fake>tag</fake> still inside comment -->
+	<real>content</real>
+</root>`;
+			const filepath = createTempXmlFile(xml);
+			try {
+				const result = XmlTag(filepath, 4, 16);
 				const validTags = result.filter((tag: [string, number]) => tag[0] !== '!--');
-				assert.ok(validTags.length >= 2, 'Expected at least 2 valid tags to be parsed');
-				assert.strictEqual(validTags[0][0], 'root');
-				assert.strictEqual(validTags[1][0], 'child');
+				assert.ok(validTags.some((tag: [string, number]) => tag[0] === 'root'));
+				assert.ok(validTags.some((tag: [string, number]) => tag[0] === 'real'));
+				assert.ok(!validTags.some((tag: [string, number]) => tag[0] === 'fake'));
 			} finally {
 				cleanupTempFile(filepath);
 			}
@@ -122,9 +139,18 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 5);
+				const result = XmlTag(filepath, 5, 19);
 				assert.ok(result.length > 0);
 				assert.strictEqual(result[0][0], 'root');
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'parent'));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'child'));
+				// Check line numbers
+				const rootTag = result.find((tag: [string, number]) => tag[0] === 'root');
+				const parentTag = result.find((tag: [string, number]) => tag[0] === 'parent');
+				const childTag = result.find((tag: [string, number]) => tag[0] === 'child');
+				assert.strictEqual(rootTag?.[1], 2, 'Expected root tag to be on line 2');
+				assert.strictEqual(parentTag?.[1], 3, 'Expected parent tag to be on line 3');
+				assert.strictEqual(childTag?.[1], 4, 'Expected child tag to be on line 4');
 			} finally {
 				cleanupTempFile(filepath);
 			}
@@ -137,7 +163,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 3);
+				const result = XmlTag(filepath, 3, 28);
 				assert.strictEqual(result[0][0], 'root');
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'child'));
 			} finally {
@@ -153,9 +179,13 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 3);
+				let result = XmlTag(filepath, 3, 16);
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'root'));
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'self-closing'));
+
+				result = XmlTag(filepath, 4, 16);
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'root'));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'normal'));
 			} finally {
 				cleanupTempFile(filepath);
 			}
@@ -170,7 +200,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 5);
+				const result = XmlTag(filepath, 5, 16);
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'root'));
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'child'));
 			} finally {
@@ -189,9 +219,15 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 3);
+				const result = XmlTag(filepath, 4, 16);
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'root'));
 				assert.ok(!result.some((tag: [string, number]) => tag[0]?.includes('xml-stylesheet')));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'child'));
+				// Check line numbers
+				const rootTag = result.find((tag: [string, number]) => tag[0] === 'root');
+				const childTag = result.find((tag: [string, number]) => tag[0] === 'child');
+				assert.strictEqual(rootTag?.[1], 3, 'Expected root tag to be on line 3');
+				assert.strictEqual(childTag?.[1], 4, 'Expected child tag to be on line 4');
 			} finally {
 				cleanupTempFile(filepath);
 			}
@@ -210,8 +246,12 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 5);
+				const result = XmlTag(filepath, 5, 28);
 				assert.strictEqual(result[0][0], 'root');
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'level1'));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'level2'));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'level3'));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'level4'));
 			} finally {
 				cleanupTempFile(filepath);
 			}
@@ -225,7 +265,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 3);
+				const result = XmlTag(filepath, 3, 12);
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'empty'));
 			} finally {
 				cleanupTempFile(filepath);
@@ -240,11 +280,11 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				let result = XmlTag(filepath, 3);
+				let result = XmlTag(filepath, 3, 28);
 				let tagNames = result.map((tag: [string, number]) => tag[0]);
 				assert.ok(tagNames.includes('tag-with-hyphens'));
 
-				result = XmlTag(filepath, 4);
+				result = XmlTag(filepath, 4, 28);
 				tagNames = result.map((tag: [string, number]) => tag[0]);
 				assert.ok(tagNames.includes('tag_with_underscores'));
 			} finally {
@@ -257,7 +297,7 @@ suite('dpath Extension Tests', () => {
 <root><parent><child1><child2>content</child2></child1></parent></root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 2);
+				const result = XmlTag(filepath, 2, 34);
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'root'));
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'parent'));
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'child1'));
@@ -277,7 +317,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = DeepPath(filepath, 'xml', 2);
+				const result = DeepPath(filepath, 'xml', 2, 16);
 				assert.ok(result.length > 0);
 				assert.strictEqual(result[0][0], 'root');
 			} finally {
@@ -291,7 +331,7 @@ suite('dpath Extension Tests', () => {
 			const filepath = createTempXmlFile(xml);
 			try {
 				assert.throws(() => {
-					DeepPath(filepath, 'json', 1);
+					DeepPath(filepath, 'json', 1, 1);
 				}, /Unsupported file type: json/);
 			} finally {
 				cleanupTempFile(filepath);
@@ -306,46 +346,8 @@ suite('dpath Extension Tests', () => {
 			const filepath = createTempXmlFile(xml);
 			try {
 				// Use smaller buffer size to test chunked reading
-				const result = XmlTag(filepath, 3, 1024);
+				const result = XmlTag(filepath, 3, 16, 1024);
 				assert.ok(result.length > 0);
-			} finally {
-				cleanupTempFile(filepath);
-			}
-		});
-
-		test('should handle different line numbers', () => {
-			const xml = `<?xml version="1.0"?>
-<root>
-	<child1>content</child1>
-	<child2>content</child2>
-	<child3>content</child3>
-</root>`;
-			const filepath = createTempXmlFile(xml);
-			try {
-				const result1 = XmlTag(filepath, 3);
-				const result2 = XmlTag(filepath, 5);
-				// Result at line 3 should include tags up to line 3
-				assert.ok(result1.length > 0);
-				// Result at line 5 should include more tags
-				assert.ok(result2.length >= result1.length);
-			} finally {
-				cleanupTempFile(filepath);
-			}
-		});
-
-		test('should return correct line numbers for tags', () => {
-			const xml = `<?xml version="1.0"?>
-<root>
-	<child1>content</child1>
-	<child2>content</child2>
-</root>`;
-			const filepath = createTempXmlFile(xml);
-			try {
-				const result = XmlTag(filepath, 5);
-				// Check that line numbers are reasonable
-				assert.ok(result.every((tag: [string, number]) => typeof tag[1] === 'number' && tag[1] > 0));
-				// root should be on line 2
-				assert.strictEqual(result[0][1], 2);
 			} finally {
 				cleanupTempFile(filepath);
 			}
@@ -372,7 +374,7 @@ suite('dpath Extension Tests', () => {
 </manifest>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 11);
+				const result = XmlTag(filepath, 11, 74);
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'manifest'));
 				assert.ok(!result.some((tag: [string, number]) => tag[0] === 'uses-permission'));
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'application'));
@@ -402,7 +404,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 8);
+				const result = XmlTag(filepath, 8, 27);
 				const validTags = result.filter((tag: [string, number]) => tag[0] !== '!--');
 				assert.ok(validTags.some((tag: [string, number]) => tag[0] === 'root'));
 				assert.ok(validTags.some((tag: [string, number]) => tag[0] === 'config'));
