@@ -4,3 +4,4 @@ node_modules
 .vscode-test/
 *.vsix
 *.xml
+.DS_Store
