@@ -9,7 +9,8 @@ export function activate(context: vscode.ExtensionContext) {
 	// Create the tree data provider
 	const line = editor?.selection.active.line || 0 + 1; // +1 to make it 1-based
 	const column = editor?.selection.active.character || 0 + 1; // +1 to make it 1-based
-	const treeDataProvider = new TreeDataProvider(editor?.document.fileName, editor?.document.languageId, line, column);
+	const tab_size = editor ? editor.options.tabSize as number : 4;
+	const treeDataProvider = new TreeDataProvider(editor?.document.fileName, editor?.document.languageId, line, column, tab_size);
 
 	// Get the configuration
 	const config = vscode.workspace.getConfiguration('dpath');
@@ -38,13 +39,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		if (editor) {
-			treeDataProvider.refresh(editor.document.fileName, editor.document.languageId, editor.selection.active.line + 1, editor.selection.active.character + 1);
+			treeDataProvider.refresh(editor.document.fileName, editor.document.languageId, editor.selection.active.line + 1, editor.selection.active.character + 1, tab_size);
 		}
 	});
 
 	const debouncedOnCursorStable = debounce((editor: vscode.TextEditorSelectionChangeEvent) => {
 		if (editor) {
-			treeDataProvider.refresh(editor.textEditor.document.fileName, editor.textEditor.document.languageId, editor.selections[0].active.line + 1, editor.selections[0].active.character + 1);
+			treeDataProvider.refresh(editor.textEditor.document.fileName, editor.textEditor.document.languageId, editor.selections[0].active.line + 1, editor.selections[0].active.character + 1, tab_size);
 		}
 	}, configDebounce);
 	vscode.window.onDidChangeTextEditorSelection(editor => {
@@ -57,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const editor = vscode.window.activeTextEditor;
 			if (editor) {
 				const document = editor.document;
-				treeDataProvider.refresh(document.fileName, document.languageId, editor.selection.active.line + 1, editor.selection.active.character + 1);
+				treeDataProvider.refresh(document.fileName, document.languageId, editor.selection.active.line + 1, editor.selection.active.character + 1, tab_size);
 			}
 		}),
 		vscode.commands.registerCommand('dpath.jump', (line: number, column: number) => {

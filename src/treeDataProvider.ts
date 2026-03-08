@@ -25,25 +25,29 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 	private _filetype: string | undefined;
 	private _line: number | undefined;
 	private _column: number | undefined;
+	private _tab_size: number = 4;
 	public bufferSize: number = 1024;
 
 	constructor(public readonly filename: string | undefined,
 				public readonly filetype: string | undefined,
 				public readonly line: number | undefined, 
-				public readonly column: number | undefined) {
+				public readonly column: number | undefined,
+				public readonly tab_size: number = 4) {
 		this._filename = filename;
 		this._filetype = filetype;
 		this._line = line;
 		this._column = column;
+		this._tab_size = tab_size;
 	}
 
-	refresh(filename: string | undefined, filetype: string | undefined, line: number | undefined, column: number | undefined): void {
+	refresh(filename: string | undefined, filetype: string | undefined, line: number | undefined, column: number | undefined, tab_size: number = 4): void {
 		if (this._filename === filename && this._line === line) return;
 
 		this._filename = filename;
 		this._filetype = filetype;
 		this._line = line;
 		this._column = column;
+		this._tab_size = tab_size;
 		this._onDidChangeTreeData.fire();
 	}
 
@@ -57,7 +61,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 		} else {
 			// Root elements
 			try {
-				const stack = dpath.DeepPath(this._filename || '', this._filetype || '', this._line || 0, this._column || 0, this.bufferSize*1024);
+				const stack = dpath.DeepPath(this._filename || '', this._filetype || '', this._line || 0, this._column || 0, this._tab_size, this.bufferSize*1024);
 				return Promise.resolve([
 					...stack.map(([label, line]) => new TreeItem(`${line}: ${label}`, vscode.TreeItemCollapsibleState.None)),
 				]);

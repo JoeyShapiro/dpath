@@ -1,14 +1,14 @@
 import { close, openSync, readSync } from 'fs';
 
-export function DeepPath(filename: string, filetype: string, line: number, column: number, size: number = 1_048_576): Array<[string, number]> {
+export function DeepPath(filename: string, filetype: string, line: number, column: number, tab_size: number = 4, size: number = 1_048_576): Array<[string, number]> {
     if (filetype == 'xml') {
-        return XmlTag(filename, line, column, size);
+        return XmlTag(filename, line, column, tab_size, size);
     }
 
     throw new Error(`Unsupported file type: ${filetype}`);
 }
 
-export function XmlTag(filename: string, line: number, column: number, size: number = 1_048_576): Array<[string, number]> {
+export function XmlTag(filename: string, line: number, column: number, tab_size: number = 4, size: number = 1_048_576): Array<[string, number]> {
     // TODO store list of whole thing
     // TODO could do wasm, but its already so fast, i doubt it would help. might even be slower
     let stack: Array<[string, number]> = [];
@@ -89,7 +89,7 @@ export function XmlTag(filename: string, line: number, column: number, size: num
                     }
                     break;
                 default:
-                    if (c === '\t') curcol += 3; // Assuming a tab size of 4
+                    if (c === '\t') curcol += tab_size - 1; // even though tab is one character, it visually takes up multiple spaces
                     if (inStartTag && inTagName && !comment) tag += c;
             }
 
