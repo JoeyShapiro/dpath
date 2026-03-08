@@ -17,6 +17,7 @@ export function XmlTag(filename: string, line: number, size: number = 1_048_576)
     var inEndTag = false;
     var inTagName = false;
     var curline = 1;
+    var comment = false;
 
     var data = Buffer.alloc(size);
     const f = openSync(filename, 'r');
@@ -34,6 +35,11 @@ export function XmlTag(filename: string, line: number, size: number = 1_048_576)
                 case '<':
                     const nc = String.fromCharCode(data[i + 1]);
                     if (nc == '?') break;
+                    if (nc == '!') {
+                        comment = true;
+                        stack.push(['!--', curline]);
+                        break;
+                    }
                     if (nc == '/') inEndTag = true;
                     else {
                         inStartTag = true;
@@ -41,9 +47,17 @@ export function XmlTag(filename: string, line: number, size: number = 1_048_576)
                     }
                     break;
                 case '>':
+                    if (comment) {
+                        if (stack.length > 0 && stack[stack.length - 1][0] == '!--') {
+                            stack.pop();
+                            comment = false;
+                        }
+                        break;
+                    }
+
                     if ((inEndTag || String.fromCharCode(data[i - 1]) == '/') && curline != line) {
                         stack.pop();
-                    } else if (inStartTag && inTagName) {
+                    } else if (inStartTag && inTagName && !comment) {
                         stack.push([tag, curline]);
                     }
 
@@ -68,7 +82,7 @@ export function XmlTag(filename: string, line: number, size: number = 1_048_576)
                     }
                     break;
                 default:
-                    if (inStartTag && inTagName) tag += c;
+                    if (inStartTag && inTagName && !comment) tag += c;
             }
         }
 
