@@ -17,7 +17,7 @@ export function XmlTag(filename: string, line: number, column: number, size: num
     var inEndTag = false;
     var inTagName = false;
     var curline = 1;
-    var curcol = 0;
+    var curcol = 1;
     var comment = false;
     var prevChar = '';
     var prevPrevChar = '';
@@ -32,12 +32,11 @@ export function XmlTag(filename: string, line: number, column: number, size: num
         for (let i = 0; i < n; i++) {
             // -_- String(60) == '60' not '<'
             const c = String.fromCharCode(data[i]);
-            curcol++;
             if (curline == line && curcol == column) break;
+            curcol++;
 
             switch (c) {
                 case '<':
-                    curcol++;
                     const nc = String.fromCharCode(data[i + 1]);
                     if (nc == '?') break;
                     if (nc == '!') {
@@ -80,7 +79,7 @@ export function XmlTag(filename: string, line: number, column: number, size: num
                         inTagName = false;
                     }
                     curline++;
-                    curcol = 0;
+                    curcol = 1;
                     break;
                 case ' ':
                     if (inStartTag && tag) {
@@ -90,8 +89,8 @@ export function XmlTag(filename: string, line: number, column: number, size: num
                     }
                     break;
                 default:
+                    if (c === '\t') curcol += 3; // Assuming a tab size of 4
                     if (inStartTag && inTagName && !comment) tag += c;
-                    curcol++;
             }
 
             prevPrevChar = prevChar;
