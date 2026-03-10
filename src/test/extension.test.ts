@@ -29,7 +29,7 @@ suite('dpath Extension Tests', () => {
 
 	// Tests for comment handling
 	suite('Comment Handling', () => {
-		test('should ignore tags inside single-line comments', () => {
+		test('should ignore single-line comments', () => {
 			const xml = `<?xml version="1.0"?>
 <root>
 	<!-- <ignored>tag inside comment</ignored> -->
@@ -302,6 +302,29 @@ suite('dpath Extension Tests', () => {
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'parent'));
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'child1'));
 				assert.ok(result.some((tag: [string, number]) => tag[0] === 'child2'));
+			} finally {
+				cleanupTempFile(filepath);
+			}
+		});
+
+		test('should finish parsing tag name when cursor is in the middle', () => {
+			const xml = `<?xml version="1.0"?>
+<root>
+	<parent>
+		<child>content</child>
+	</parent>
+</root>`;
+			const filepath = createTempXmlFile(xml);
+			try {
+				// Cursor is at line 4, column 12 which is in the middle of "<child>"
+				// Specifically, it's after "<ch" so in the middle of "child"
+				const result = XmlTag(filepath, 4, 12);
+				assert.ok(result.length > 0);
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'root'));
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'parent'));
+				// The critical assertion: child should be parsed even though cursor is in the middle of its name
+				assert.ok(result.some((tag: [string, number]) => tag[0] === 'child'), 
+					'Expected child tag to be parsed even when cursor is in middle of tag name');
 			} finally {
 				cleanupTempFile(filepath);
 			}
