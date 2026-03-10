@@ -27,12 +27,12 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
     var n = readSync(f, data, 0, data.length, null);
 
     while (n > 0) {
-        if (curline == line && curcol == column) break;
+        if (curline >= line && curcol >= column && !inTagName) break;
 
         for (let i = 0; i < n; i++) {
             // -_- String(60) == '60' not '<'
             const c = String.fromCharCode(data[i]);
-            if (curline == line && curcol == column) break;
+            if (curline >= line && curcol >= column && !inTagName) break;
             curcol++;
 
             switch (c) {
@@ -61,7 +61,7 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                         break;
                     }
 
-                    if ((inEndTag || String.fromCharCode(data[i - 1]) == '/') && curline != line) {
+                    if (inEndTag || String.fromCharCode(data[i - 1]) == '/') {
                         stack.pop();
                     } else if (inStartTag && inTagName && !comment) {
                         stack.push([tag, curline]);
