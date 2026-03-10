@@ -39,9 +39,15 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                 case '<':
                     const nc = String.fromCharCode(data[i + 1]);
                     if (nc == '?') break;
-                    if (nc == '!') {
+                    if (nc == '!') { // TODO are others possible
                         comment = true;
+                        i+=2; // skip "!--"
+                        curcol+=2;
                         stack.push(['!--', curline]);
+                        inStartTag = false;
+                        inEndTag = false;
+                        inTagName = false;
+
                         break;
                     }
                     if (nc == '/') inEndTag = true;
@@ -54,16 +60,17 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                 case '>':
                     if (comment) {
                         // XML comments only end with "-->". Ignore standalone '>' inside comments.
+                        // TODO the stack check is dangerous
                         if (prevPrevChar == '-' && prevChar == '-' && stack.length > 0 && stack[stack.length - 1][0] == '!--') {
                             stack.pop();
                             comment = false;
+                            break;
                         }
-                        break;
                     }
 
                     if (inEndTag || String.fromCharCode(data[i - 1]) == '/') {
                         stack.pop();
-                    } else if (inStartTag && inTagName && !comment) {
+                    } else if (inStartTag && inTagName) {
                         stack.push([tag, curline]);
                     }
 
