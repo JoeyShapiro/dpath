@@ -17,7 +17,19 @@
     "theme": "light"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "xml",
+    "xpath",
+    "json",
+    "path",
+    "tree",
+    "navigator",
+    "manifest",
+    "android",
+    "deep path"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
