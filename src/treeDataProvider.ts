@@ -8,6 +8,7 @@ export class TreeItem extends vscode.TreeItem {
 		public readonly children?: TreeItem[]
 	) {
 		super(label, collapsibleState);
+		this.contextValue = 'dpathTreeItem';
 
 		const line = parseInt(label.split(':')[0].trim());
 		this.command = {
@@ -27,6 +28,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 	private _column: number | undefined;
 	private _tab_size: number = 4;
 	public bufferSize: number = 1024;
+	private _stack: [string, number][] = [];
 
 	constructor(public readonly filename: string | undefined,
 				public readonly filetype: string | undefined,
@@ -51,6 +53,22 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 		this._onDidChangeTreeData.fire();
 	}
 
+	path(element: TreeItem): string {
+		// get all elelments before the selected element
+		const path = this._stack.filter(([_label, line]) => line <= parseInt(element.label.split(':')[0]));
+		if (path.length === 0) {
+			return '';
+		}
+
+		switch (this._filetype) {
+			case 'xml':
+				return "/"+path.map(([label, _line]) => label).join('/');
+			default:
+				return '';
+		}
+
+	}
+
 	getTreeItem(element: TreeItem): vscode.TreeItem {
 		return element;
 	}
@@ -62,10 +80,12 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 			// Root elements
 			try {
 				const stack = dpath.DeepPath(this._filename || '', this._filetype || '', this._line || 0, this._column || 0, this._tab_size, this.bufferSize*1024);
+				this._stack = stack;
 				return Promise.resolve([
 					...stack.map(([label, line]) => new TreeItem(`${line}: ${label}`, vscode.TreeItemCollapsibleState.None)),
 				]);
 			} catch (error) {
+				this._stack = [];
 				return Promise.resolve([
 					new TreeItem(`Error: ${error}`, vscode.TreeItemCollapsibleState.None),
 				]);

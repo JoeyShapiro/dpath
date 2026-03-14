@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TreeDataProvider } from './treeDataProvider';
+import { TreeDataProvider, TreeItem } from './treeDataProvider';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "dpath" is now active!');
@@ -60,6 +60,21 @@ export function activate(context: vscode.ExtensionContext) {
 				const document = editor.document;
 				treeDataProvider.refresh(document.fileName, document.languageId, editor.selection.active.line + 1, editor.selection.active.character + 1, tab_size);
 			}
+		}),
+		vscode.commands.registerCommand('dpath.copyItem', async (item: TreeItem) => {
+			if (!item?.label) {
+				return;
+			}
+
+			const stack = treeDataProvider.path(item);
+
+			if (stack.length === 0) {
+				vscode.window.setStatusBarMessage('No path to copy', 1500);
+				return;
+			}
+
+			vscode.env.clipboard.writeText(stack);
+			vscode.window.setStatusBarMessage('Copied path to clipboard', 1500);
 		}),
 		vscode.commands.registerCommand('dpath.jump', (line: number, column: number) => {
 			const editor = vscode.window.activeTextEditor;

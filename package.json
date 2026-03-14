@@ -54,6 +54,11 @@
         "icon": "$(extensions-refresh)"
       },
       {
+        "command": "dpath.copyItem",
+        "title": "Copy Item",
+        "icon": "$(copy)"
+      },
+      {
         "command": "dpath.jump",
         "title": "Jump to Line",
         "icon": "$(debug-start)"
@@ -65,6 +70,13 @@
           "command": "dpath.refresh",
           "when": "view == dpath",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "dpath.copyItem",
+          "when": "view == dpath && viewItem == dpathTreeItem",
+          "group": "inline"
         }
       ]
     }
