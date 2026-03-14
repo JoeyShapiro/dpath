@@ -6,6 +6,10 @@ Read deep into highly nested or long xml files.
 
 ![Demo](./images/demo.gif)
 
+Create a simple path from the nested tree structure.
+
+![Path](./images/path.gif)
+
 ## Extension Settings
 
 This extension contributes the following settings:
