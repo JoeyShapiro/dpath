@@ -1,5 +1,48 @@
 import { close, openSync, readSync } from 'fs';
 
+type NamespaceContext = {
+    defaultNamespace: string;
+    prefixMappings: Record<string, string>;
+};
+
+function parseNamespaceDeclarations(startTagText: string): Map<string, string> {
+    const declarations = new Map<string, string>();
+    const namespaceRegex = /xmlns(?::([A-Za-z_][\w.-]*))?\s*=\s*("([^"]*)"|'([^']*)')/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = namespaceRegex.exec(startTagText)) !== null) {
+        const prefix = match[1] ?? '';
+        const value = match[3] ?? match[4] ?? '';
+        declarations.set(prefix, value);
+    }
+
+    return declarations;
+}
+
+function applyNamespaceDeclarations(parentContext: NamespaceContext, declarations: Map<string, string>): NamespaceContext {
+    const nextContext: NamespaceContext = {
+        defaultNamespace: parentContext.defaultNamespace,
+        prefixMappings: { ...parentContext.prefixMappings },
+    };
+
+    for (const [prefix, uri] of declarations) {
+        if (prefix === '') nextContext.defaultNamespace = uri;
+        else nextContext.prefixMappings[prefix] = uri;
+    }
+
+    return nextContext;
+}
+
+function resolveNamespaceForTag(tagName: string, context: NamespaceContext): string {
+    const splitIndex = tagName.indexOf(':');
+    if (splitIndex !== -1) {
+        const prefix = tagName.slice(0, splitIndex);
+        return context.prefixMappings[prefix] ?? '';
+    }
+
+    return context.defaultNamespace;
+}
+
 export class Tag {
     public name: string = '';
     public line: number = 0;
@@ -23,7 +66,10 @@ export function DeepPath(filename: string, filetype: string, line: number, colum
 export function XmlTag(filename: string, line: number, column: number, tab_size: number = 4, size: number = 1_048_576): Array<Tag> {
     // TODO could do wasm, but its already so fast, i doubt it would help. might even be slower
     let stack: Array<Tag> = [];
+    const namespaceStack: Array<NamespaceContext> = [{ defaultNamespace: '', prefixMappings: {} }];
     var tag = '';
+    var startTagText = '';
+    var startTagWasPushed = false;
     var inStartTag = false;
     var inEndTag = false;
     var inTagName = false;
@@ -65,6 +111,8 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     else {
                         inStartTag = true;
                         inTagName = true;
+                        startTagWasPushed = false;
+                        startTagText = '';
                         tag = '';
                     }
                     break;
@@ -79,22 +127,47 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                         }
                     }
 
-                    if (inEndTag || String.fromCharCode(data[i - 1]) == '/') {
+                    const isSelfClosing = String.fromCharCode(data[i - 1]) == '/';
+
+                    if (inEndTag) {
                         stack.pop();
-                    } else if (inStartTag && inTagName) {
-                        const ns = tag.includes(':') ? tag.split(':')[0] : '';
-                        stack.push(new Tag(tag, curline, ns));
+
+                        // End tags close the namespace scope of their matching start tags.
+                        if (namespaceStack.length > 1) namespaceStack.pop();
+                    } else if (inStartTag) {
+                        if (inTagName && tag) {
+                            stack.push(new Tag(tag, curline, ''));
+                            startTagWasPushed = true;
+                        }
+
+                        // i dont like how this does this at this character. but it is smart
+                        if (startTagWasPushed && stack.length > 0) {
+                            const declarations = parseNamespaceDeclarations(startTagText);
+                            const parentContext = namespaceStack[namespaceStack.length - 1];
+                            const currentContext = applyNamespaceDeclarations(parentContext, declarations);
+
+                            stack[stack.length - 1].namespace = resolveNamespaceForTag(stack[stack.length - 1].name, currentContext);
+                            namespaceStack.push(currentContext);
+
+                            if (isSelfClosing) {
+                                stack.pop();
+                                if (namespaceStack.length > 1) namespaceStack.pop();
+                            }
+                        }
                     }
 
                     tag = '';
+                    startTagText = '';
+                    startTagWasPushed = false;
                     inTagName = false;
                     inStartTag = false;
                     inEndTag = false;
                     break;
                 case '\n':
+                    if (inStartTag && !inEndTag) startTagText += c;
                     if (inStartTag && tag) {
-                        const ns = tag.includes(':') ? tag.split(':')[0] : '';
-                        stack.push(new Tag(tag, curline, ns));
+                        stack.push(new Tag(tag, curline, ''));
+                        startTagWasPushed = true;
                         tag = '';
                         inTagName = false;
                     }
@@ -102,22 +175,35 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     curcol = 1;
                     break;
                 case ' ':
+                    if (inStartTag && !inEndTag) startTagText += c;
                     if (inStartTag && tag) {
-                        const ns = tag.includes(':') ? tag.split(':')[0] : '';
-                        stack.push(new Tag(tag, curline, ns));
+                        stack.push(new Tag(tag, curline, ''));
+                        startTagWasPushed = true;
                         tag = '';
                         inTagName = false;
                     }
                     break;
                 case '/':
+                    if (inStartTag && !inEndTag) startTagText += c;
                     if (inStartTag && tag) {
-                        const ns = tag.includes(':') ? tag.split(':')[0] : '';
-                        stack.push(new Tag(tag, curline, ns));
+                        stack.push(new Tag(tag, curline, ''));
                         tag = '';
                         inTagName = false;
+
+                        // special case if the cursor is on in a self-closing tag
+                        // we shouldnt care about a self-closing tag's namespaces. They wont be used for long
+                        if (stack.length > 0 && curline >= line && curcol >= column) {
+                            const declarations = parseNamespaceDeclarations(startTagText);
+                            const parentContext = namespaceStack[namespaceStack.length - 1];
+                            const currentContext = applyNamespaceDeclarations(parentContext, declarations);
+
+                            stack[stack.length - 1].namespace = resolveNamespaceForTag(stack[stack.length - 1].name, currentContext);
+                            namespaceStack.push(currentContext);
+                        }
                     }
                     break;
                 default:
+                    if (inStartTag && !inEndTag) startTagText += c;
                     if (c === '\t') curcol += tab_size - 1; // even though tab is one character, it visually takes up multiple spaces
                     if (inStartTag && inTagName) tag += c;
             }
