@@ -62,7 +62,17 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
 		switch (this._filetype) {
 			case 'xml':
-				return "/"+path.map((tag) => tag.name).join('/');
+				let xquery = "/";
+				for (const tag of path) {
+					// if the tag has a namespace, and the tag name does not already include a prefix, add the namespace as a prefix
+					if (tag.namespace && tag.name.indexOf(':') === -1) {
+						xquery += `{${tag.namespace}}`;
+					}
+
+					xquery += `${tag.name}`;
+				}
+
+				return xquery;
 			default:
 				return '';
 		}
