@@ -1,6 +1,18 @@
 import { close, openSync, readSync } from 'fs';
 
-export function DeepPath(filename: string, filetype: string, line: number, column: number, tab_size: number = 4, size: number = 1_048_576): Array<[string, number]> {
+export class Tag {
+    public name: string = '';
+    public line: number = 0;
+    public namespace: string = '';
+
+    constructor(name: string, line: number, namespace: string) {
+        this.name = name;
+        this.line = line;
+        this.namespace = namespace;
+    }
+}
+
+export function DeepPath(filename: string, filetype: string, line: number, column: number, tab_size: number = 4, size: number = 1_048_576): Array<Tag> {
     if (filetype == 'xml') {
         return XmlTag(filename, line, column, tab_size, size);
     }
@@ -8,10 +20,9 @@ export function DeepPath(filename: string, filetype: string, line: number, colum
     throw new Error(`Unsupported file type: ${filetype}`);
 }
 
-export function XmlTag(filename: string, line: number, column: number, tab_size: number = 4, size: number = 1_048_576): Array<[string, number]> {
-    // TODO store list of whole thing
+export function XmlTag(filename: string, line: number, column: number, tab_size: number = 4, size: number = 1_048_576): Array<Tag> {
     // TODO could do wasm, but its already so fast, i doubt it would help. might even be slower
-    let stack: Array<[string, number]> = [];
+    let stack: Array<Tag> = [];
     var tag = '';
     var inStartTag = false;
     var inEndTag = false;
@@ -43,7 +54,7 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                         comment = true;
                         i+=2; // skip "!--"
                         curcol+=2;
-                        stack.push(['!--', curline]);
+                        stack.push(new Tag('!--', curline, ''));
                         inStartTag = false;
                         inEndTag = false;
                         inTagName = false;
@@ -61,7 +72,7 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     if (comment) {
                         // XML comments only end with "-->". Ignore standalone '>' inside comments.
                         // TODO the stack check is dangerous
-                        if (prevPrevChar == '-' && prevChar == '-' && stack.length > 0 && stack[stack.length - 1][0] == '!--') {
+                        if (prevPrevChar == '-' && prevChar == '-' && stack.length > 0 && stack[stack.length - 1].name == '!--') {
                             stack.pop();
                             comment = false;
                             break;
@@ -71,7 +82,7 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     if (inEndTag || String.fromCharCode(data[i - 1]) == '/') {
                         stack.pop();
                     } else if (inStartTag && inTagName) {
-                        stack.push([tag, curline]);
+                        stack.push(new Tag(tag, curline, ''));
                     }
 
                     tag = '';
@@ -81,7 +92,7 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     break;
                 case '\n':
                     if (inStartTag && tag) {
-                        stack.push([tag, curline]);
+                        stack.push(new Tag(tag, curline, ''));
                         tag = '';
                         inTagName = false;
                     }
@@ -90,14 +101,14 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     break;
                 case ' ':
                     if (inStartTag && tag) {
-                        stack.push([tag, curline]);
+                        stack.push(new Tag(tag, curline, ''));
                         tag = '';
                         inTagName = false;
                     }
                     break;
                 case '/':
                     if (inStartTag && tag) {
-                        stack.push([tag, curline]);
+                        stack.push(new Tag(tag, curline, ''));
                         tag = '';
                         inTagName = false;
                     }
