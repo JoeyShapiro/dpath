@@ -82,7 +82,8 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     if (inEndTag || String.fromCharCode(data[i - 1]) == '/') {
                         stack.pop();
                     } else if (inStartTag && inTagName) {
-                        stack.push(new Tag(tag, curline, ''));
+                        const ns = tag.includes(':') ? tag.split(':')[0] : '';
+                        stack.push(new Tag(tag, curline, ns));
                     }
 
                     tag = '';
@@ -92,7 +93,8 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     break;
                 case '\n':
                     if (inStartTag && tag) {
-                        stack.push(new Tag(tag, curline, ''));
+                        const ns = tag.includes(':') ? tag.split(':')[0] : '';
+                        stack.push(new Tag(tag, curline, ns));
                         tag = '';
                         inTagName = false;
                     }
@@ -101,14 +103,16 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     break;
                 case ' ':
                     if (inStartTag && tag) {
-                        stack.push(new Tag(tag, curline, ''));
+                        const ns = tag.includes(':') ? tag.split(':')[0] : '';
+                        stack.push(new Tag(tag, curline, ns));
                         tag = '';
                         inTagName = false;
                     }
                     break;
                 case '/':
                     if (inStartTag && tag) {
-                        stack.push(new Tag(tag, curline, ''));
+                        const ns = tag.includes(':') ? tag.split(':')[0] : '';
+                        stack.push(new Tag(tag, curline, ns));
                         tag = '';
                         inTagName = false;
                     }
