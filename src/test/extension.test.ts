@@ -427,7 +427,7 @@ suite('dpath Extension Tests', () => {
 </root>`;
 			const filepath = createTempXmlFile(xml);
 			try {
-				const result = XmlTag(filepath, 8, 27);
+				const result = XmlTag(filepath, 9, 23);
 				assert.ok(result.some((tag: Tag) => tag.name === 'root'));
 				assert.ok(result.some((tag: Tag) => tag.name === 'config'));
 				// deprecated should NOT be in the valid tags
