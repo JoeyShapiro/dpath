@@ -331,6 +331,134 @@ suite('dpath Extension Tests', () => {
 		});
 	});
 
+	// Tests for namespace handling
+	suite('Namespace Handling', () => {
+		test('should resolve explicit prefix namespaces for nested children', () => {
+			const xml = `<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Body>
+		<soap:Action>ping</soap:Action>
+	</soap:Body>
+</soap:Envelope>`;
+			const filepath = createTempXmlFile(xml);
+			try {
+				const result = XmlTag(filepath, 4, 20);
+				assert.strictEqual(result.length, 3, 'Expected envelope, body, and action in stack');
+				assert.strictEqual(result[0].name, 'soap:Envelope');
+				assert.strictEqual(result[1].name, 'soap:Body');
+				assert.strictEqual(result[2].name, 'soap:Action');
+
+				const expectedUri = 'http://schemas.xmlsoap.org/soap/envelope/';
+				assert.strictEqual(result[0].namespace, expectedUri, 'Expected envelope namespace URI to resolve from soap prefix');
+				assert.strictEqual(result[1].namespace, expectedUri, 'Expected body namespace URI to resolve from soap prefix');
+				assert.strictEqual(result[2].namespace, expectedUri, 'Expected action namespace URI to resolve from soap prefix');
+			} finally {
+				cleanupTempFile(filepath);
+			}
+		});
+
+		test('should resolve default namespace for unprefixed nested children', () => {
+			const xml = `<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+	<dependency>
+		<version>1.0</version>
+	</dependency>
+</project>`;
+			const filepath = createTempXmlFile(xml);
+			try {
+				const result = XmlTag(filepath, 4, 16);
+				assert.strictEqual(result.length, 3, 'Expected project, dependency, and version in stack');
+				assert.strictEqual(result[0].name, 'project');
+				assert.strictEqual(result[1].name, 'dependency');
+				assert.strictEqual(result[2].name, 'version');
+
+				const expectedUri = 'http://maven.apache.org/POM/4.0.0';
+				assert.strictEqual(result[0].namespace, expectedUri, 'Expected project to carry default namespace URI');
+				assert.strictEqual(result[1].namespace, expectedUri, 'Expected dependency to inherit default namespace URI');
+				assert.strictEqual(result[2].namespace, expectedUri, 'Expected version to inherit default namespace URI');
+			} finally {
+				cleanupTempFile(filepath);
+			}
+		});
+
+		test('should keep namespace empty when no namespace exists for nested children', () => {
+			const xml = `<?xml version="1.0"?>
+<root>
+	<parent>
+		<element/>
+	</parent>
+</root>`;
+			const filepath = createTempXmlFile(xml);
+			try {
+				const result = XmlTag(filepath, 4, 11);
+				assert.strictEqual(result.length, 3, 'Expected root, parent, and element in stack');
+				assert.strictEqual(result[0].name, 'root');
+				assert.strictEqual(result[1].name, 'parent');
+				assert.strictEqual(result[2].name, 'element');
+
+				assert.strictEqual(result[0].namespace, '', 'Expected root namespace to be empty');
+				assert.strictEqual(result[1].namespace, '', 'Expected parent namespace to be empty');
+				assert.strictEqual(result[2].namespace, '', 'Expected element namespace to be empty');
+			} finally {
+				cleanupTempFile(filepath);
+			}
+		});
+
+		test('should handle multiple namespace declarations and overrides', () => {
+			const xml = `<?xml version="1.0"?>
+<root xmlns="http://default.com" xmlns:a="http://a.com">
+	<child1>
+		<child2 xmlns="http://child2.com" xmlns:a="http://a-child2.com">
+			<child3/>
+		</child2>
+	</child1>
+</root>`;
+			const filepath = createTempXmlFile(xml);
+			try {
+				const result = XmlTag(filepath, 5, 16);
+				assert.strictEqual(result.length, 4, 'Expected root, child1, child2, and child3 in stack');
+				assert.strictEqual(result[0].name, 'root');
+				assert.strictEqual(result[1].name, 'child1');
+				assert.strictEqual(result[2].name, 'child2');
+				assert.strictEqual(result[3].name, 'child3');
+
+				assert.strictEqual(result[0].namespace, 'http://default.com', 'Expected root to have default namespace');
+				assert.strictEqual(result[1].namespace, 'http://default.com', 'Expected child1 to inherit default namespace');
+				assert.strictEqual(result[2].namespace, 'http://child2.com', 'Expected child2 to override default namespace');
+				assert.strictEqual(result[3].namespace, 'http://child2.com', 'Expected child3 to inherit child2 namespace: got ' + result[3].namespace);
+			} finally {
+				cleanupTempFile(filepath);
+			}
+		});
+
+		test('should handle empty namespace declarations', () => {
+			const xml = `<?xml version="1.0"?>
+<root xmlns="http://default.com">
+	<child1>
+		<child2 xmlns="">
+			<child3/>
+		</child2>
+	</child1>
+</root>`;
+			const filepath = createTempXmlFile(xml);
+			try {
+				const result = XmlTag(filepath, 5, 16);
+				assert.strictEqual(result.length, 4, 'Expected root, child1, child2, and child3 in stack');
+				assert.strictEqual(result[0].name, 'root');
+				assert.strictEqual(result[1].name, 'child1');
+				assert.strictEqual(result[2].name, 'child2');
+				assert.strictEqual(result[3].name, 'child3');
+
+				assert.strictEqual(result[0].namespace, 'http://default.com', 'Expected root to have default namespace');
+				assert.strictEqual(result[1].namespace, 'http://default.com', 'Expected child1 to inherit default namespace');
+				assert.strictEqual(result[2].namespace, '', 'Expected child2 to override default namespace with empty string');
+				assert.strictEqual(result[3].namespace, '', 'Expected child3 to inherit empty namespace');
+			} finally {
+				cleanupTempFile(filepath);
+			}
+		});
+	});
+
 	// Tests for DeepPath function
 	suite('DeepPath Function', () => {
 		test('should support xml filetype', () => {
