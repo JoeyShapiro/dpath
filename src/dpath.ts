@@ -119,7 +119,7 @@ export function XmlTag(filename: string, line: number, column: number, tab_size:
                     break;
                 default:
                     if (c === '\t') curcol += tab_size - 1; // even though tab is one character, it visually takes up multiple spaces
-                    if (inStartTag && inTagName && !comment) tag += c;
+                    if (inStartTag && inTagName) tag += c;
             }
 
             prevPrevChar = prevChar;
